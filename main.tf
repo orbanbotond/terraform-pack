@@ -45,7 +45,8 @@ resource "heroku_build" "build" {
   app = heroku_app.application.id
 
   source {
-    url = var.source_code_github_url
+    # url = var.source_code_github_url
+    path = "."
   }
 }
 
