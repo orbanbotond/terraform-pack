@@ -10,8 +10,8 @@ terraform {
 provider "heroku" {}
 
 resource "heroku_app" "application" {
-  name   = "learn-terraform-heroku-ob"
-  region = "us"
+  name   = var.app_name
+  region = var.app_region
 
   buildpacks = [
     "heroku/nodejs",
@@ -23,38 +23,42 @@ module "key-value-store" {
   source = "./modules/key-value-store"
 
   app  = heroku_app.application.id
-  plan = "30"
+  plan = var.redis_plan
 }
 
 module "relational-db" {
   source = "./modules/database/relational/postgres"
 
   app  = heroku_app.application.id
-  plan = "hobby-dev"
+  plan = var.postgres_plan
 }
 
 module "messagebus" {
   source = "./modules/message-bus/karafka"
 
   app  = heroku_app.application.id
-  plan = "ducky"
+  plan = var.messagebus_plan
 }
 
-variable "app_quantity" {
-  default     = 1
-  description = "Number of dynos in your Heroku formation"
+# Build code & release to the app
+resource "heroku_build" "build" {
+  app = heroku_app.application.id
+
+  source {
+    url = var.source_code_github_url
+  }
 }
 
 # Launch the app's web process by scaling-up
 resource "heroku_formation" "web_dyno" {
   app        = heroku_app.application.id
-  # type       = "worker"
   type       = "web"
-  quantity   = var.app_quantity
+  quantity   = var.web_dyno_count
   # professional
   # size       = "Standard-1x"
   # hobby
   # size       = "Hobby"
   # Free
-  size       = "Free"
+  size       = var.web_dyno_plan
+  depends_on = [heroku_build.build]
 }
