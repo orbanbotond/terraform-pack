@@ -1,41 +1,43 @@
+terraform {
+  required_providers {
+    heroku = {
+      source = "heroku/heroku"
+      version = "~> 4.6"
+    }
+  }
+}
+
 provider "heroku" {}
 
-resource "heroku_app" "example" {
+resource "heroku_app" "application" {
   name   = "learn-terraform-heroku-ob"
   region = "us"
+
+  buildpacks = [
+    "heroku/nodejs",
+    "heroku/ruby"
+  ]
 }
 
-resource "heroku_addon" "postgres" {
-  app  = heroku_app.example.id
-  plan = "heroku-postgresql:hobby-dev"
+module "key-value-store" {
+  source = "./modules/key-value-store"
+
+  app  = heroku_app.application.id
+  plan = "30"
 }
 
-resource "heroku_addon" "redis" {
-  app  = heroku_app.example.id
-  plan = "rediscloud:30"
-  # region = "europe"
+module "relational-db" {
+  source = "./modules/database/relational/postgres"
+
+  app  = heroku_app.application.id
+  plan = "hobby-dev"
 }
 
-# resource "heroku_addon" "cloudkarafka" {
-#   app  = heroku_app.example.id
-#   plan = "cloudkarafka:ducky"
-# }
+module "messagebus" {
+  source = "./modules/message-bus/karafka"
 
-# resource "heroku_addon" "mariadb" {
-#   app  = heroku_app.example.id
-#   plan = "jawsdb-maria:kitefin"
-# }
-
-resource "heroku_build" "example" {
-  app = heroku_app.example.id
-
-  source {
-    path = "./app"
-  }
-
-  lifecycle {
-    create_before_destroy = true
-  }
+  app  = heroku_app.application.id
+  plan = "ducky"
 }
 
 variable "app_quantity" {
@@ -45,7 +47,8 @@ variable "app_quantity" {
 
 # Launch the app's web process by scaling-up
 resource "heroku_formation" "web_dyno" {
-  app        = heroku_app.example.id
+  app        = heroku_app.application.id
+  # type       = "worker"
   type       = "web"
   quantity   = var.app_quantity
   # professional
@@ -54,18 +57,4 @@ resource "heroku_formation" "web_dyno" {
   # size       = "Hobby"
   # Free
   size       = "Free"
-  depends_on = [heroku_build.example]
 }
-
-# resource "heroku_formation" "worker_dyno" {
-#   app        = heroku_app.example.id
-#   type       = "worker"
-#   quantity   = var.app_quantity
-#   # professional
-#   # size       = "Standard-1x"
-#   # hobby
-#   # size       = "Hobby"
-#   # Free
-#   size       = "Free"
-#   depends_on = [heroku_build.example]
-# }
