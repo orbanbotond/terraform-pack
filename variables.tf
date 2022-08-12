@@ -38,6 +38,12 @@ variable "web_dyno_plan" {
   type        = string
 }
 
+variable "logging_plan" {
+  description = "Name of the Logging plan"
+  default     = "choklad"
+  type        = string
+}
+
 variable "web_dyno_count" {
   default     = 1
   description = "Number of dynos in your Heroku formation"

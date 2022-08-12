@@ -12,6 +12,7 @@ provider "heroku" {}
 resource "heroku_app" "application" {
   name   = var.app_name
   region = var.app_region
+  stack      = "heroku-22"
 
   buildpacks = [
     "heroku/nodejs",
@@ -38,6 +39,13 @@ module "messagebus" {
 
   app  = heroku_app.application.id
   plan = var.messagebus_plan
+}
+
+module "logging" {
+  source = "./modules/loging"
+
+  app  = heroku_app.application.id
+  plan = var.logging_plan
 }
 
 # Build code & release to the app
