@@ -12,7 +12,7 @@ provider "heroku" {}
 resource "heroku_app" "application" {
   name   = var.app_name
   region = var.app_region
-  stack      = "heroku-22"
+  stack      = "heroku-20"
 
   buildpacks = [
     "heroku/nodejs",
